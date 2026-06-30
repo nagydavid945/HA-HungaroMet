@@ -2,18 +2,27 @@ import logging
 
 from homeassistant.components.sensor import SensorEntity
 
+from .const import DEFAULT_DISTANCE_KM
 from .weather_data import process_daily_data
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class HungarometStationInfoSensor(SensorEntity):
-    def __init__(self, hass, name, station_info, sensor_type="daily"):
+    def __init__(
+        self,
+        hass,
+        name,
+        station_info,
+        sensor_type="daily",
+        distance_km=DEFAULT_DISTANCE_KM,
+    ):
         self.hass = hass
         self._name = name
         self._station_info = station_info
         self._device_id = "hungaromet_weather"
         self._sensor_type = sensor_type
+        self._distance_km = distance_km
         self._unique_id = f"{self._device_id}_station_info_{sensor_type}"
         self._added = False
 
@@ -62,7 +71,7 @@ class HungarometStationInfoSensor(SensorEntity):
         if not self._added:
             return
         _, stations = await self.hass.async_add_executor_job(
-            process_daily_data, self.hass
+            process_daily_data, self.hass, self._distance_km
         )
         self._station_info = stations
         self.async_write_ha_state()

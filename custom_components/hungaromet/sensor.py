@@ -73,7 +73,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         daily_data, station_info = await hass.async_add_executor_job(
             process_daily_data, hass, distance_km
         )
-        hourly_data, _ = await hass.async_add_executor_job(process_hourly_data, hass)
+        hourly_data, _ = await hass.async_add_executor_job(
+            process_hourly_data, hass, distance_km
+        )
         ten_minutes_data, _ = await hass.async_add_executor_job(
             process_ten_minutes_data, hass, distance_km
         )
@@ -145,6 +147,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     except Exception as err:  # pragma: no cover - defensive logging
         _LOGGER.error("Failed to fetch/process weather data: %s", err)
         return
+    for sensor in sensors:
+        setattr(sensor, "_distance_km", distance_km)
     async_add_entities(sensors, True)
 
     # Register update service
@@ -192,15 +196,15 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             # Fetch data once
             if data_type == "hourly":
                 data, _ = await hass.async_add_executor_job(
-                    process_hourly_data, hass, DEFAULT_DISTANCE_KM
+                    process_hourly_data, hass, distance_km
                 )
             elif data_type == "ten_minutes":
                 data, _ = await hass.async_add_executor_job(
-                    process_ten_minutes_data, hass, DEFAULT_DISTANCE_KM
+                    process_ten_minutes_data, hass, distance_km
                 )
             elif data_type == "daily":
                 data, _ = await hass.async_add_executor_job(
-                    process_daily_data, hass, DEFAULT_DISTANCE_KM
+                    process_daily_data, hass, distance_km
                 )
             else:
                 return
@@ -263,10 +267,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ):
+    distance_km = entry.data.get(CONF_DISTANCE_KM, DEFAULT_DISTANCE_KM)
     sensors = []
     try:
         data, station_info = await hass.async_add_executor_job(
-            process_daily_data, hass, DEFAULT_DISTANCE_KM
+            process_daily_data, hass, distance_km
         )
         sensors.append(
             HungarometWeatherDailySensor(
@@ -382,7 +387,7 @@ async def async_setup_entry(
         )
 
         data, station_info = await hass.async_add_executor_job(
-            process_hourly_data, hass, DEFAULT_DISTANCE_KM
+            process_hourly_data, hass, distance_km
         )
         sensors.append(
             HungarometWeatherHourlySensor(
@@ -507,7 +512,7 @@ async def async_setup_entry(
         )
 
         data, station_info = await hass.async_add_executor_job(
-            process_ten_minutes_data, hass, DEFAULT_DISTANCE_KM
+            process_ten_minutes_data, hass, distance_km
         )
         sensors.append(
             HungarometWeatherTenMinutesSensor(
@@ -631,6 +636,8 @@ async def async_setup_entry(
     except Exception as err:  # pragma: no cover - defensive logging
         _LOGGER.error("Failed to fetch/process weather data: %s", err)
         return
+    for sensor in sensors:
+        setattr(sensor, "_distance_km", distance_km)
     async_add_entities(sensors, True)
 
     async def handle_update_service(call):
@@ -677,15 +684,15 @@ async def async_setup_entry(
             # Fetch data once
             if data_type == "hourly":
                 data, _ = await hass.async_add_executor_job(
-                    process_hourly_data, hass, DEFAULT_DISTANCE_KM
+                    process_hourly_data, hass, distance_km
                 )
             elif data_type == "ten_minutes":
                 data, _ = await hass.async_add_executor_job(
-                    process_ten_minutes_data, hass, DEFAULT_DISTANCE_KM
+                    process_ten_minutes_data, hass, distance_km
                 )
             elif data_type == "daily":
                 data, _ = await hass.async_add_executor_job(
-                    process_daily_data, hass, DEFAULT_DISTANCE_KM
+                    process_daily_data, hass, distance_km
                 )
             else:
                 return

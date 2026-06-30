@@ -19,6 +19,7 @@ class HungarometWeatherDailySensor(SensorEntity):
         self._unique_id = f"{self._device_id}_{self._name.lower().replace(' ', '_')}"
         self._added = False
         self.coordinator = coordinator
+        self._distance_km = DEFAULT_DISTANCE_KM
 
     @property
     def name(self):
@@ -72,13 +73,12 @@ class HungarometWeatherDailySensor(SensorEntity):
     async def async_update_data(self):
         if not self._added:
             return
-
         # Use coordinator data if available, otherwise fetch directly
         if self.coordinator and self.coordinator.data:
             data = self.coordinator.data.get("data", {})
         else:
             data, _ = await self.hass.async_add_executor_job(
-                process_daily_data, self.hass, DEFAULT_DISTANCE_KM
+                process_daily_data, self.hass, self._distance_km
             )
 
         value = data.get(self._key)
